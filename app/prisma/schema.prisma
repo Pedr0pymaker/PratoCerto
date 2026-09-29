@@ -1,0 +1,39 @@
+// =============================================================
+// PratoCerto — Schema Prisma
+// =============================================================
+// ORM: Prisma
+// Banco: PostgreSQL
+// Conexão: variável de ambiente DATABASE_URL (nunca hardcoded)
+// =============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------------------------------------------
+// Produto
+// Representa um item controlado no estoque do estabelecimento.
+// Estoque atual NÃO é armazenado aqui — é calculado a partir
+// dos lotes (LoteEstoque) para garantir consistência FIFO.
+// -------------------------------------------------------------
+model Produto {
+  id             String   @id @default(cuid())
+  nome           String   @db.VarChar(200)
+  categoria      String   @db.VarChar(100)
+  unidadeMedida  String   @db.VarChar(50)
+  estoqueMinimo  Decimal  @db.Decimal(10, 3)
+  estoqueIdeal   Decimal  @db.Decimal(10, 3)
+  custoReferencia Decimal? @db.Decimal(10, 2)
+  ativo          Boolean  @default(true)
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  @@map("produtos")
+  @@index([ativo])
+  @@index([categoria])
+}

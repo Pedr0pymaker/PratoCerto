@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "produtos" ALTER COLUMN "criadoEm" SET DATA TYPE TIMESTAMP(3),
+ALTER COLUMN "atualizadoEm" SET DATA TYPE TIMESTAMP(3);
