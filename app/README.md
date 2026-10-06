@@ -7,14 +7,15 @@ Sistema web responsivo de gestão de estoque para restaurantes, lanchonetes, pad
 - **Framework:** [Next.js 16](https://nextjs.org/) com App Router
 - **Linguagem:** TypeScript
 - **Estilização:** Tailwind CSS v4
-- **Banco de dados:** PostgreSQL (a configurar — veja abaixo)
-- **Deploy:** [Vercel](https://vercel.com/) + [Neon PostgreSQL](https://neon.tech/) (recomendado)
+- **Banco de dados:** MySQL 8.0 (via Prisma ORM)
+- **Autenticação:** JWT seguro em cookies HTTP-Only com hash de senhas via bcrypt
+- **Deploy:** [Vercel](https://vercel.com/) + MySQL gerenciado (ex: PlanetScale, Railway, AWS RDS)
 
 ## Pré-requisitos
 
 - Node.js >= 18
 - npm >= 9
-- (Para usar o banco) PostgreSQL local ou conta no [Neon](https://neon.tech/)
+- MySQL Server local (ou remoto) rodando na porta 3306
 
 ## Como executar localmente
 
@@ -39,10 +40,22 @@ Copie o arquivo de exemplo e preencha com seus dados:
 cp .env.example .env.local
 ```
 
-Abra `.env.local` e configure ao menos a `DATABASE_URL` quando o banco estiver disponível.  
-**Nota:** Na Etapa 1, o projeto funciona sem banco de dados configurado.
+Abra `.env.local` e configure a `DATABASE_URL` do MySQL e o `AUTH_SECRET`:
+```env
+DATABASE_URL="mysql://root:suasenha@localhost:3306/pratocerto"
+AUTH_SECRET="chave_secreta_longa_e_aleatoria_com_mais_de_32_caracteres"
+```
 
-### 4. Execute o servidor de desenvolvimento
+### 4. Aplique as migrações no MySQL e crie o primeiro Gerente
+
+```bash
+npx prisma migrate dev
+npm run seed:admin
+```
+
+O comando `npm run seed:admin` criará o usuário GERENTE inicial com credenciais exibidas com segurança no terminal.
+
+### 5. Execute o servidor de desenvolvimento
 
 ```bash
 npm run dev
@@ -50,35 +63,44 @@ npm run dev
 
 O sistema estará disponível em **http://localhost:3000**.
 
+## Perfis de Usuário
+
+O PratoCerto suporta dois tipos de usuário com permissões diferenciadas:
+
+- **GERENTE:** Acesso completo a todos os módulos, incluindo Gestão de Usuários (`/usuarios`), criação e gerenciamento de contas, relatórios e estoque.
+- **FUNCIONARIO:** Acesso operacional aos módulos de estoque, compras, perdas e receitas. Não tem acesso à tela ou endpoints de gestão de usuários.
+
 ## Estrutura do projeto
 
 ```
 app/
+├── prisma/
+│   ├── migrations/             # Migrações versionadas do MySQL
+│   └── schema.prisma           # Modelos de dados (Produto, Usuario)
 ├── src/
 │   ├── app/                    # App Router do Next.js
-│   │   ├── (painel)/           # Grupo de rotas do painel de controle
-│   │   │   ├── layout.tsx      # Layout compartilhado (sidebar + header)
+│   │   ├── (painel)/           # Grupo de rotas protegidas
+│   │   │   ├── layout.tsx      # Layout compartilhado com controle de sessão
 │   │   │   ├── dashboard/      # Página do Dashboard
-│   │   │   ├── estoque/        # Módulo de Estoque
-│   │   │   ├── perdas/         # Módulo de Perdas
-│   │   │   ├── compras/        # Módulo de Compras
-│   │   │   ├── receitas/       # Módulo de Receitas
-│   │   │   ├── relatorios/     # Módulo de Relatórios
-│   │   │   ├── ia/             # PratoCerto IA
-│   │   │   ├── usuarios/       # Gestão de Usuários
-│   │   │   └── configuracoes/  # Configurações
+│   │   │   ├── estoque/        # Módulo de Estoque (Produtos)
+│   │   │   ├── usuarios/       # Gestão de Usuários (Apenas GERENTE)
+│   │   │   └── ...             # Demais módulos
+│   │   ├── api/
+│   │   │   ├── auth/           # Login, logout e verificação de sessão (/me)
+│   │   │   ├── produtos/       # Cadastro e consulta de produtos
+│   │   │   └── usuarios/       # CRUD de usuários com controle de perfil
+│   │   ├── login/              # Tela de login
 │   │   ├── layout.tsx          # Layout raiz
-│   │   ├── page.tsx            # Landing page
-│   │   └── globals.css         # Estilos globais e tokens de design
-│   ├── components/
-│   │   ├── AppShell.tsx        # Layout do painel (sidebar + topbar + main)
-│   │   ├── Sidebar.tsx         # Navegação lateral
-│   │   └── ComingSoon.tsx      # Placeholder para módulos futuros
-│   └── lib/
-│       └── db.ts               # Configuração da conexão com PostgreSQL
+│   │   └── globals.css         # Estilos globais
+│   ├── components/             # Componentes reutilizáveis
+│   ├── lib/
+│   │   ├── auth.ts             # Funções de hash (bcrypt) e JWT (jose)
+│   │   ├── db.ts               # Conexão com MySQL via Prisma Client
+│   │   └── validations/        # Schemas de validação de dados
+│   └── middleware.ts           # Proteção de rotas e controle de acesso
+├── scripts/
+│   └── seed-admin.mjs          # Script seguro de criação do primeiro gerente
 ├── .env.example                # Referência de variáveis de ambiente
-├── .gitignore
-├── next.config.ts
 ├── package.json
 └── tsconfig.json
 ```
@@ -87,13 +109,13 @@ app/
 
 | Etapa | Status | Descrição |
 |-------|--------|-----------|
-| 1 | ✅ Concluída | Estrutura inicial, navegação, landing page |
-| 2 | 🔜 Próxima | Login e autenticação segura |
-| 3 | ⏳ Futura | Cadastro de produtos |
-| 4 | ⏳ Futura | Fluxo completo de estoque (entradas/saídas) |
-| 5 | ⏳ Futura | Registro de perdas |
+| 1 | ✅ Concluída | Estrutura inicial, navegação, layout responsivo |
+| 2 | ✅ Concluída | Cadastro e consulta de produtos com persistência em banco |
+| 3 | ✅ Concluída | Migração para MySQL, autenticação JWT, cookies HTTP-Only e perfis (GERENTE e FUNCIONARIO) |
+| 4 | ⏳ Futura | Fluxo completo de estoque (entradas, saídas e lotes FIFO) |
+| 5 | ⏳ Futura | Registro e motivos de perdas |
 | 6 | ⏳ Futura | Controle de validade e alertas |
-| 7 | ⏳ Futura | Dashboard com dados reais |
+| 7 | ⏳ Futura | Dashboard com métricas reais |
 | 8 | ⏳ Futura | Interface mobile aprimorada |
 | 9 | ⏳ Futura | Entrada por foto de nota fiscal (OCR) |
 | 10 | ⏳ Futura | Receitas e baixa automática |
@@ -101,16 +123,20 @@ app/
 | 12 | ⏳ Futura | Lista de compras |
 | 13 | ⏳ Futura | PratoCerto IA |
 
-## Configuração do banco de dados
+## Configuração do banco de dados (MySQL)
 
-O banco de dados será implementado na **Etapa 2**. Por enquanto, o arquivo `src/lib/db.ts` está preparado para receber a conexão.
-
-### Para desenvolvimento local
-1. Instale o PostgreSQL
-2. Crie um banco chamado `pratocerto`
+1. Instale o MySQL 8.0 ou utilize um serviço compatível na nuvem
+2. Crie um banco chamado `pratocerto`:
+   ```sql
+   CREATE DATABASE pratocerto CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
 3. Configure `DATABASE_URL` no `.env.local`:
    ```
-   DATABASE_URL=postgresql://usuario:senha@localhost:5432/pratocerto
+   DATABASE_URL="mysql://usuario:senha@localhost:3306/pratocerto"
+   ```
+4. Execute as migrações:
+   ```bash
+   npx prisma migrate dev
    ```
 
 ### Para produção (Vercel + Neon)

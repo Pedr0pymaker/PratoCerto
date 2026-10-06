@@ -25,11 +25,11 @@ async function runTests() {
 
   try {
     // -------------------------------------------------------------
-    // Teste 1: Conexão direta com o PostgreSQL via Prisma
+    // Teste 1: Conexão direta com o MySQL via Prisma
     // -------------------------------------------------------------
-    console.log("--- 1. Testando conexão com PostgreSQL ---");
+    console.log("--- 1. Testando conexão com MySQL ---");
     const count = await prisma.produto.count();
-    assert(typeof count === "number", `Conexão PostgreSQL ativa. Total de produtos atuais no banco: ${count}`);
+    assert(typeof count === "number", `Conexão MySQL ativa. Total de produtos atuais no banco: ${count}`);
 
     // -------------------------------------------------------------
     // Teste 2: Validação de campos vazios (POST /api/produtos)
@@ -108,14 +108,14 @@ async function runTests() {
     assert(produtoEncontrado != null, `Produto recém-criado '${nomeUnico}' encontrado na listagem`);
 
     // -------------------------------------------------------------
-    // Teste 6: Persistência no PostgreSQL
+    // Teste 6: Persistência no MySQL
     // -------------------------------------------------------------
-    console.log("\n--- 6. Verificando persistência no PostgreSQL ---");
+    console.log("\n--- 6. Verificando persistência no MySQL ---");
     const noBanco = await prisma.produto.findUnique({
       where: { id: dataCadastro.produto.id },
     });
     assert(noBanco != null, `Produto encontrado diretamente no banco pelo Prisma`);
-    assert(Number(noBanco.estoqueMinimo) === 20, "Valor de estoqueMinimo conferido no PostgreSQL");
+    assert(Number(noBanco.estoqueMinimo) === 20, "Valor de estoqueMinimo conferido no MySQL");
 
     // -------------------------------------------------------------
     // Teste 7: Acesso à rota de página /estoque

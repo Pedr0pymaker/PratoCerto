@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface NavItem {
   href: string;
   label: string;
   icon: string;
   description: string;
+  apenasGerente?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -58,6 +60,7 @@ const navItems: NavItem[] = [
     label: "Usuários",
     icon: "👥",
     description: "Equipe e permissões",
+    apenasGerente: true,
   },
   {
     href: "/configuracoes",
@@ -72,8 +75,48 @@ interface SidebarProps {
   onMobileClose: () => void;
 }
 
+interface UsuarioLogado {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: "GERENTE" | "FUNCIONARIO";
+}
+
 export default function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [usuario, setUsuario] = useState<UsuarioLogado | null>(null);
+  const [saindo, setSaindo] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.usuario) {
+          setUsuario(data.usuario);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleLogout() {
+    setSaindo(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+      router.refresh();
+    } catch {
+      router.push("/login");
+    }
+  }
+
+  // Se o perfil for FUNCIONARIO, oculta itens exclusivos do GERENTE
+  const itensVisiveis = navItems.filter((item) => {
+    if (item.apenasGerente && usuario && usuario.perfil !== "GERENTE") {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <>
@@ -150,7 +193,7 @@ export default function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
         {/* Nav links */}
         <nav style={{ flex: 1, padding: "12px 8px" }}>
           <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-            {navItems.map((item) => {
+            {itensVisiveis.map((item) => {
               const isActive =
                 pathname === item.href ||
                 (pathname.startsWith(item.href + "/") && item.href !== "/dashboard");
@@ -188,17 +231,70 @@ export default function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
           </ul>
         </nav>
 
-        {/* Footer da sidebar */}
+        {/* Informações do usuário logado + Logout */}
         <div
           style={{
-            padding: "16px 20px",
+            padding: "16px",
             borderTop: "1px solid rgba(255,255,255,0.08)",
-            fontSize: "12px",
-            color: "rgba(255,255,255,0.3)",
+            background: "rgba(0,0,0,0.15)",
           }}
         >
-          <p style={{ margin: 0 }}>PratoCerto v0.1.0</p>
-          <p style={{ margin: "2px 0 0" }}>Etapa 1 — Estrutura inicial</p>
+          {usuario ? (
+            <div style={{ marginBottom: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                <strong style={{ fontSize: "13px", color: "#ffffff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {usuario.nome}
+                </strong>
+                <span
+                  style={{
+                    background: usuario.perfil === "GERENTE" ? "rgba(79, 70, 229, 0.4)" : "rgba(255,255,255,0.12)",
+                    color: usuario.perfil === "GERENTE" ? "#c7d2fe" : "rgba(255,255,255,0.8)",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  {usuario.perfil}
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: "11px", color: "rgba(255,255,255,0.45)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {usuario.email}
+              </p>
+            </div>
+          ) : (
+            <p style={{ margin: "0 0 10px", fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>
+              Sessão ativa
+            </p>
+          )}
+
+          <button
+            id="btn-logout"
+            onClick={handleLogout}
+            disabled={saindo}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              background: "rgba(239, 68, 68, 0.15)",
+              color: "#fca5a5",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
+              borderRadius: "6px",
+              padding: "8px 12px",
+              fontSize: "12px",
+              fontWeight: 600,
+              cursor: saindo ? "not-allowed" : "pointer",
+              transition: "background var(--transition)",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.25)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)")}
+          >
+            <span>🚪</span>
+            <span>{saindo ? "Saindo..." : "Sair da conta"}</span>
+          </button>
         </div>
       </aside>
 
@@ -211,3 +307,4 @@ export default function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
     </>
   );
 }
+

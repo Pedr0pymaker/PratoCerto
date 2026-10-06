@@ -2,7 +2,7 @@
 // PratoCerto — Schema Prisma
 // =============================================================
 // ORM: Prisma
-// Banco: PostgreSQL
+// Banco: MySQL 8.0
 // Conexão: variável de ambiente DATABASE_URL (nunca hardcoded)
 // =============================================================
 
@@ -11,7 +11,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -22,18 +22,45 @@ datasource db {
 // dos lotes (LoteEstoque) para garantir consistência FIFO.
 // -------------------------------------------------------------
 model Produto {
-  id             String   @id @default(cuid())
-  nome           String   @db.VarChar(200)
-  categoria      String   @db.VarChar(100)
-  unidadeMedida  String   @db.VarChar(50)
-  estoqueMinimo  Decimal  @db.Decimal(10, 3)
-  estoqueIdeal   Decimal  @db.Decimal(10, 3)
+  id              String   @id @default(cuid())
+  nome            String   @db.VarChar(200)
+  categoria       String   @db.VarChar(100)
+  unidadeMedida   String   @db.VarChar(50)
+  estoqueMinimo   Decimal  @db.Decimal(10, 3)
+  estoqueIdeal    Decimal  @db.Decimal(10, 3)
   custoReferencia Decimal? @db.Decimal(10, 2)
-  ativo          Boolean  @default(true)
-  criadoEm      DateTime @default(now())
-  atualizadoEm  DateTime @updatedAt
+  ativo           Boolean  @default(true)
+  criadoEm       DateTime @default(now())
+  atualizadoEm   DateTime @updatedAt
 
   @@map("produtos")
   @@index([ativo])
   @@index([categoria])
+}
+
+// -------------------------------------------------------------
+// Perfil de Acesso do Usuário
+// MySQL não tem ENUM nativo como PostgreSQL; o Prisma gerencia
+// via String com valores validados na aplicação.
+// -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// Usuario
+// Usuários com acesso ao sistema PratoCerto.
+// Senhas armazenadas exclusivamente em hash seguro (bcrypt).
+// perfil: "GERENTE" | "FUNCIONARIO"
+// -------------------------------------------------------------
+model Usuario {
+  id           String   @id @default(cuid())
+  nome         String   @db.VarChar(150)
+  email        String   @unique @db.VarChar(150)
+  senhaHash    String   @db.VarChar(255)
+  perfil       String   @default("FUNCIONARIO") @db.VarChar(20)
+  ativo        Boolean  @default(true)
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("usuarios")
+  @@index([email])
+  @@index([perfil])
 }
