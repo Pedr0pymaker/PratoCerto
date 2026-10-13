@@ -33,9 +33,34 @@ model Produto {
   criadoEm       DateTime @default(now())
   atualizadoEm   DateTime @updatedAt
 
+  lotes LoteEstoque[]
+
   @@map("produtos")
   @@index([ativo])
   @@index([categoria])
+}
+
+// -------------------------------------------------------------
+// LoteEstoque
+// Cada entrada de estoque gera um lote vinculado a um produto.
+// O saldo do produto é calculado pela soma de quantidadeAtual
+// de todos os seus lotes — nunca armazenado de forma duplicada.
+// -------------------------------------------------------------
+model LoteEstoque {
+  id                String    @id @default(cuid())
+  produtoId         String
+  quantidadeInicial Decimal   @db.Decimal(10, 3)
+  quantidadeAtual   Decimal   @db.Decimal(10, 3)
+  dataEntrada       DateTime
+  dataValidade      DateTime?
+  custoUnitario     Decimal?  @db.Decimal(10, 2)
+  criadoEm          DateTime  @default(now())
+
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@map("lotes_estoque")
+  @@index([produtoId])
+  @@index([dataValidade])
 }
 
 // -------------------------------------------------------------

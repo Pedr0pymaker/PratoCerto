@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed:admin": "node scripts/seed-admin.mjs",
-    "test:etapa3": "node scripts/test-etapa3.mjs"
+    "test:etapa3": "node scripts/test-etapa3.mjs",
+    "test:etapa4": "node scripts/test-etapa4.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

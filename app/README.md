@@ -76,17 +76,18 @@ O PratoCerto suporta dois tipos de usuário com permissões diferenciadas:
 app/
 ├── prisma/
 │   ├── migrations/             # Migrações versionadas do MySQL
-│   └── schema.prisma           # Modelos de dados (Produto, Usuario)
+│   └── schema.prisma           # Modelos de dados (Produto, LoteEstoque, Usuario)
 ├── src/
 │   ├── app/                    # App Router do Next.js
 │   │   ├── (painel)/           # Grupo de rotas protegidas
 │   │   │   ├── layout.tsx      # Layout compartilhado com controle de sessão
 │   │   │   ├── dashboard/      # Página do Dashboard
-│   │   │   ├── estoque/        # Módulo de Estoque (Produtos)
+│   │   │   ├── estoque/        # Módulo de Estoque (Lotes, Saldos e Produtos)
 │   │   │   ├── usuarios/       # Gestão de Usuários (Apenas GERENTE)
 │   │   │   └── ...             # Demais módulos
 │   │   ├── api/
 │   │   │   ├── auth/           # Login, logout e verificação de sessão (/me)
+│   │   │   ├── estoque/        # Entradas de mercadoria e saldos/lotes
 │   │   │   ├── produtos/       # Cadastro e consulta de produtos
 │   │   │   └── usuarios/       # CRUD de usuários com controle de perfil
 │   │   ├── login/              # Tela de login
@@ -112,7 +113,7 @@ app/
 | 1 | ✅ Concluída | Estrutura inicial, navegação, layout responsivo |
 | 2 | ✅ Concluída | Cadastro e consulta de produtos com persistência em banco |
 | 3 | ✅ Concluída | Migração para MySQL, autenticação JWT, cookies HTTP-Only e perfis (GERENTE e FUNCIONARIO) |
-| 4 | ⏳ Futura | Fluxo completo de estoque (entradas, saídas e lotes FIFO) |
+| 4 | ✅ Concluída | Entradas de mercadoria, controle de lotes (LoteEstoque) e saldo disponível calculado |
 | 5 | ⏳ Futura | Registro e motivos de perdas |
 | 6 | ⏳ Futura | Controle de validade e alertas |
 | 7 | ⏳ Futura | Dashboard com métricas reais |
