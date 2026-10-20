@@ -26,6 +26,12 @@ const navItems: NavItem[] = [
     description: "Produtos e movimentações",
   },
   {
+    href: "/alertas",
+    label: "Alertas",
+    icon: "🔔",
+    description: "Estoque baixo e validade dos lotes",
+  },
+  {
     href: "/perdas",
     label: "Perdas",
     icon: "⚠️",

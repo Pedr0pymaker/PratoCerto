@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node scripts/run-next.mjs dev",
+    "build": "node scripts/run-next.mjs build",
+    "start": "node scripts/run-next.mjs start",
     "lint": "eslint",
     "seed:admin": "node scripts/seed-admin.mjs",
+    "test:auth-secret": "node scripts/test-auth-secret.mjs",
+    "test:alertas": "node scripts/test-alertas-estoque.mjs",
+    "test:compras": "node scripts/test-compras-rules.mjs",
     "test:etapa3": "node scripts/test-etapa3.mjs",
     "test:etapa4": "node scripts/test-etapa4.mjs",
     "test:etapa5": "node scripts/test-etapa5.mjs"

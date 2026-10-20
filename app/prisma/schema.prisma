@@ -15,6 +15,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum StatusPedidoCompra {
+  PENDENTE
+  RECEBIDO
+  CANCELADO
+}
+
 // -------------------------------------------------------------
 // Produto
 // Representa um item controlado no estoque do estabelecimento.
@@ -30,15 +36,16 @@ model Produto {
   estoqueIdeal    Decimal  @db.Decimal(10, 3)
   custoReferencia Decimal? @db.Decimal(10, 2)
   ativo           Boolean  @default(true)
-  criadoEm       DateTime @default(now())
-  atualizadoEm   DateTime @updatedAt
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
 
-  lotes LoteEstoque[]
-  perdas Perda[]
+  lotes             LoteEstoque[]
+  perdas            Perda[]
+  itensPedidoCompra ItemPedidoCompra[]
 
-  @@map("produtos")
   @@index([ativo])
   @@index([categoria])
+  @@map("produtos")
 }
 
 // -------------------------------------------------------------
@@ -59,9 +66,9 @@ model LoteEstoque {
 
   produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
 
-  @@map("lotes_estoque")
   @@index([produtoId])
   @@index([dataValidade])
+  @@map("lotes_estoque")
 }
 
 // -------------------------------------------------------------
@@ -83,14 +90,54 @@ model Usuario {
   senhaHash    String   @db.VarChar(255)
   perfil       String   @default("FUNCIONARIO") @db.VarChar(20)
   ativo        Boolean  @default(true)
-  criadoEm    DateTime @default(now())
+  criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
   perdas Perda[]
 
-  @@map("usuarios")
   @@index([email])
   @@index([perfil])
+  @@map("usuarios")
+}
+
+// -------------------------------------------------------------
+// PedidoCompra / ItemPedidoCompra
+// Pedido imutável após recebimento/cancelamento; receber gera lotes.
+// -------------------------------------------------------------
+model PedidoCompra {
+  id               String             @id @default(cuid())
+  fornecedor       String?            @db.VarChar(200)
+  dataPedido       DateTime
+  observacoes      String?            @db.VarChar(500)
+  status           StatusPedidoCompra @default(PENDENTE)
+  total            Decimal            @db.Decimal(12, 2)
+  dataRecebimento  DateTime?
+  dataCancelamento DateTime?
+  criadoEm         DateTime           @default(now())
+  atualizadoEm     DateTime           @updatedAt
+
+  itens ItemPedidoCompra[]
+
+  @@index([status, dataPedido])
+  @@index([dataPedido])
+  @@map("pedidos_compra")
+}
+
+model ItemPedidoCompra {
+  id            String    @id @default(cuid())
+  pedidoId      String
+  produtoId     String
+  quantidade    Decimal   @db.Decimal(10, 3)
+  custoUnitario Decimal   @db.Decimal(10, 2)
+  total         Decimal   @db.Decimal(12, 2)
+  dataValidade  DateTime?
+
+  pedido  PedidoCompra @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produto Produto      @relation(fields: [produtoId], references: [id], onDelete: Restrict)
+
+  @@index([pedidoId])
+  @@index([produtoId])
+  @@map("itens_pedido_compra")
 }
 
 // -------------------------------------------------------------
@@ -101,22 +148,22 @@ model Usuario {
 // motivo: "VENCIMENTO" | "DETERIORACAO" | "SOBRA" | "PREPARO_ACIDENTE" | "OUTRO"
 // -------------------------------------------------------------
 model Perda {
-  id              String   @id @default(cuid())
-  produtoId       String
-  usuarioId       String
-  quantidade      Decimal  @db.Decimal(10, 3)
-  motivo          String   @db.VarChar(30)
-  custoEstimado   Decimal  @db.Decimal(10, 2)
-  observacao       String?  @db.VarChar(500)
-  dataHora        DateTime @default(now())
-  criadoEm        DateTime @default(now())
+  id            String   @id @default(cuid())
+  produtoId     String
+  usuarioId     String
+  quantidade    Decimal  @db.Decimal(10, 3)
+  motivo        String   @db.VarChar(30)
+  custoEstimado Decimal  @db.Decimal(10, 2)
+  observacao    String?  @db.VarChar(500)
+  dataHora      DateTime @default(now())
+  criadoEm      DateTime @default(now())
 
-  produto  Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
-  usuario  Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
-  @@map("perdas")
   @@index([produtoId])
   @@index([usuarioId])
   @@index([motivo])
   @@index([dataHora])
+  @@map("perdas")
 }

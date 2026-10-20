@@ -9,6 +9,7 @@
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { getAuthSecret } from "@/lib/auth-secret";
 
 export const SESSION_COOKIE_NAME = "pratocerto_session";
 
@@ -19,17 +20,6 @@ export interface UserSession {
   nome: string;
   email: string;
   perfil: PerfilUsuario;
-}
-
-/**
- * Obtém a chave secreta para assinatura dos tokens JWT.
- * AUTH_SECRET deve ser definido no .env — nunca hardcoded em produção.
- */
-function getAuthSecret(): Uint8Array {
-  const secret =
-    process.env.AUTH_SECRET ||
-    "pratocerto-secret-key-development-minimum-32-chars-long";
-  return new TextEncoder().encode(secret);
 }
 
 /**
@@ -85,8 +75,10 @@ export async function criarTokenSessao(
 export async function verificarTokenSessao(
   token: string
 ): Promise<UserSession | null> {
+  // Erros de configuração devem propagar para que produção falhe explicitamente.
+  const secret = getAuthSecret();
   try {
-    const { payload } = await jwtVerify(token, getAuthSecret());
+    const { payload } = await jwtVerify(token, secret);
     return {
       id: String(payload.id),
       nome: String(payload.nome),

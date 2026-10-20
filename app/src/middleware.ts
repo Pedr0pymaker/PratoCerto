@@ -9,13 +9,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { getAuthSecret } from "@/lib/auth-secret";
 
 const SESSION_COOKIE_NAME = "pratocerto_session";
-
-function getAuthSecret(): Uint8Array {
-  const secret = process.env.AUTH_SECRET || "pratocerto-secret-key-development-minimum-32-chars-long";
-  return new TextEncoder().encode(secret);
-}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -29,13 +25,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Validar antes de qualquer rota dinâmica impede que o middleware aceite
+  // sessões ou continue operando em produção com configuração incompleta.
+  const authSecret = getAuthSecret();
+
   // Token do cookie
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   let sessionPayload: { id?: string; perfil?: string } | null = null;
 
   if (token) {
     try {
-      const { payload } = await jwtVerify(token, getAuthSecret());
+      const { payload } = await jwtVerify(token, authSecret);
       sessionPayload = payload as { id?: string; perfil?: string };
     } catch {
       sessionPayload = null;
@@ -70,6 +70,7 @@ export async function middleware(request: NextRequest) {
   const rotasProtegidas = [
     "/dashboard",
     "/estoque",
+    "/alertas",
     "/usuarios",
     "/perdas",
     "/compras",
