@@ -34,6 +34,7 @@ model Produto {
   atualizadoEm   DateTime @updatedAt
 
   lotes LoteEstoque[]
+  perdas Perda[]
 
   @@map("produtos")
   @@index([ativo])
@@ -85,7 +86,37 @@ model Usuario {
   criadoEm    DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
+  perdas Perda[]
+
   @@map("usuarios")
   @@index([email])
   @@index([perfil])
+}
+
+// -------------------------------------------------------------
+// Perda
+// Registro de desperdício de estoque. A quantidade perdida é
+// descontada dos lotes via FIFO (mais antigos primeiro) no
+// momento do registro, dentro de uma transação atômica.
+// motivo: "VENCIMENTO" | "DETERIORACAO" | "SOBRA" | "PREPARO_ACIDENTE" | "OUTRO"
+// -------------------------------------------------------------
+model Perda {
+  id              String   @id @default(cuid())
+  produtoId       String
+  usuarioId       String
+  quantidade      Decimal  @db.Decimal(10, 3)
+  motivo          String   @db.VarChar(30)
+  custoEstimado   Decimal  @db.Decimal(10, 2)
+  observacao       String?  @db.VarChar(500)
+  dataHora        DateTime @default(now())
+  criadoEm        DateTime @default(now())
+
+  produto  Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  usuario  Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("perdas")
+  @@index([produtoId])
+  @@index([usuarioId])
+  @@index([motivo])
+  @@index([dataHora])
 }
