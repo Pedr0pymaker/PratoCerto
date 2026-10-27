@@ -530,11 +530,11 @@ async function run() {
     console.log(`========================================\n`);
 
     if (failed > 0) {
-      process.exit(1);
+      process.exitCode = 1;
     }
   } catch (err) {
     console.error("❌ Erro fatal durante a execução dos testes:", err);
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
     // Limpeza total
     if (produtoTesteId) {
